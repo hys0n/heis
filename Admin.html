@@ -1,0 +1,708 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>H.I.E.S — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:         #09090d;
+      --surface:    #0e0e14;
+      --raised:     #141420;
+      --border:     #1c1c28;
+      --border-mid: #2a2a3a;
+      --text:       #ddd8ce;
+      --mid:        #948f86;
+      --dim:        #514e48;
+      --gold:       #b8944a;
+      --gold-glow:  #b8944a18;
+      --red:        #a84848;
+      --green:      #4a8a5a;
+      --font-d:     'Cormorant Garamond', Georgia, serif;
+      --font-m:     'JetBrains Mono', monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font-d); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; min-height: 100dvh; }
+
+    /* ── Login ── */
+    #login-screen {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100dvh; padding: 40px;
+    }
+    .login-mark   { font-family: var(--font-m); font-size: 11px; letter-spacing: .3em; color: var(--gold); text-transform: uppercase; margin-bottom: 32px; }
+    .login-title  { font-size: 32px; font-weight: 300; margin-bottom: 8px; }
+    .login-sub    { font-size: 14px; color: var(--dim); font-family: var(--font-m); margin-bottom: 48px; }
+    .login-input  { background: var(--surface); border: 1px solid var(--border-mid); color: var(--text); font-family: var(--font-m); font-size: 16px; padding: 14px 20px; width: 320px; max-width: 100%; outline: none; border-radius: 2px; transition: border-color .2s; letter-spacing: .1em; }
+    .login-input:focus { border-color: var(--gold); }
+    .login-btn    { margin-top: 16px; padding: 14px 32px; background: var(--gold-glow); border: 1px solid var(--gold); color: var(--text); font-family: var(--font-d); font-size: 16px; cursor: pointer; border-radius: 2px; width: 320px; max-width: 100%; transition: background .2s; }
+    .login-btn:hover { background: #b8944a30; }
+    .login-err    { color: var(--red); font-family: var(--font-m); font-size: 12px; margin-top: 12px; }
+
+    /* ── Dashboard ── */
+    #dashboard-screen { display: none; }
+
+    .admin-nav {
+      position: sticky; top: 0; z-index: 50;
+      background: var(--bg); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px;
+    }
+    .admin-nav-mark { font-family: var(--font-m); font-size: 11px; letter-spacing: .2em; color: var(--gold); text-transform: uppercase; }
+    .admin-nav-right { display: flex; gap: 20px; align-items: center; }
+    .admin-nav-link { font-family: var(--font-m); font-size: 11px; color: var(--dim); cursor: pointer; background: none; border: none; text-transform: uppercase; letter-spacing: .1em; transition: color .2s; }
+    .admin-nav-link:hover { color: var(--mid); }
+
+    .admin-body { max-width: 1100px; margin: 0 auto; padding: 48px 32px; }
+
+    .page-title { font-size: 32px; font-weight: 300; margin-bottom: 4px; }
+    .page-sub   { font-family: var(--font-m); font-size: 11px; color: var(--dim); letter-spacing: .1em; margin-bottom: 48px; }
+
+    /* ── Stat cards ── */
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 48px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); padding: 24px; border-radius: 2px; }
+    .stat-n    { font-size: 42px; font-weight: 300; color: var(--gold); line-height: 1; margin-bottom: 6px; }
+    .stat-label{ font-family: var(--font-m); font-size: 10px; letter-spacing: .2em; color: var(--dim); text-transform: uppercase; }
+
+    /* ── Section ── */
+    .section { margin-bottom: 56px; }
+    .section-head { font-family: var(--font-m); font-size: 10px; letter-spacing: .25em; text-transform: uppercase; color: var(--gold); padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+
+    /* ── Table ── */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { font-family: var(--font-m); font-size: 10px; letter-spacing: .15em; text-transform: uppercase; color: var(--dim); padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+    .data-table td { font-size: 14px; padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--mid); vertical-align: top; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--surface); }
+    .mono-cell  { font-family: var(--font-m); font-size: 11px; color: var(--dim); }
+    .name-cell  { color: var(--text); font-weight: 400; }
+    .section-badge { font-family: var(--font-m); font-size: 10px; padding: 3px 8px; border: 1px solid var(--border-mid); border-radius: 1px; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; background: none; cursor: pointer; transition: background .15s, border-color .15s; }
+    .section-badge:hover { background: var(--surface); }
+    .section-badge.full   { border-color: var(--gold); color: var(--gold); }
+    .section-badge.full:hover { background: var(--gold-glow); }
+    .section-badge.slider { border-color: var(--green); color: var(--green); }
+    .section-badge.slider:hover { background: #4a8a5a18; }
+    .section-badge.assay  { border-color: var(--mid);  color: var(--mid); }
+    .section-badge.assay:hover { background: var(--surface); }
+
+    /* ── Gap bar chart ── */
+    .gap-list { display: flex; flex-direction: column; gap: 8px; }
+    .gap-row  { display: grid; grid-template-columns: 160px 1fr 48px; gap: 12px; align-items: center; }
+    .gap-term { font-family: var(--font-m); font-size: 12px; color: var(--mid); }
+    .gap-bar-wrap { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .gap-bar  { height: 4px; background: var(--gold); border-radius: 2px; transition: width .5s ease; }
+    .gap-val  { font-family: var(--font-m); font-size: 11px; color: var(--gold); text-align: right; }
+
+    /* ── Profile drawer ── */
+    .drawer-overlay { position: fixed; inset: 0; background: rgba(9,9,13,.7); backdrop-filter: blur(4px); z-index: 100; display: none; }
+    .drawer-overlay.open { display: block; }
+    .drawer { position: fixed; right: 0; top: 0; bottom: 0; width: min(560px, 100vw); background: var(--raised); border-left: 1px solid var(--border-mid); z-index: 101; overflow-y: auto; padding: 32px; transform: translateX(100%); transition: transform .3s cubic-bezier(.32,.72,0,1); }
+    .drawer.open { transform: translateX(0); }
+    .drawer-close { position: absolute; top: 16px; right: 16px; background: none; border: 1px solid var(--border); color: var(--dim); width: 32px; height: 32px; cursor: pointer; font-size: 14px; border-radius: 2px; }
+    .drawer-name  { font-size: 28px; font-weight: 300; margin-bottom: 4px; }
+    .drawer-id    { font-family: var(--font-m); font-size: 10px; color: var(--dim); word-break: break-all; margin-bottom: 24px; }
+    .drawer-section { margin-bottom: 32px; }
+    .drawer-section-label { font-family: var(--font-m); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .answer-block { margin-bottom: 20px; }
+    .answer-q { font-family: var(--font-m); font-size: 10px; letter-spacing: .1em; color: var(--dim); margin-bottom: 6px; text-transform: uppercase; }
+    .answer-a { font-size: 14px; font-weight: 300; color: var(--mid); line-height: 1.7; white-space: pre-wrap; }
+    .slider-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .slider-entry { background: var(--surface); border: 1px solid var(--border); padding: 10px 14px; border-radius: 2px; }
+    .slider-term  { font-family: var(--font-m); font-size: 11px; color: var(--gold); margin-bottom: 4px; }
+    .slider-nums  { font-family: var(--font-m); font-size: 10px; color: var(--dim); }
+    .detected-cloud { display: flex; flex-wrap: wrap; gap: 6px; }
+    .det-chip { font-family: var(--font-m); font-size: 10px; padding: 4px 10px; border: 1px solid var(--border); color: var(--dim); border-radius: 1px; }
+
+    .loading-msg { color: var(--dim); font-family: var(--font-m); font-size: 13px; padding: 40px 0; text-align: center; }
+    .error-msg   { color: var(--red); font-family: var(--font-m); font-size: 13px; }
+
+    /* ── Gauge ── */
+    .gauge-wrap { background: var(--surface); border: 1px solid var(--border-mid); border-radius: 2px; padding: 32px; display: flex; flex-direction: column; gap: 24px; max-width: 680px; }
+    .gauge-label { font-family: var(--font-m); font-size: 10px; color: var(--dim); letter-spacing: .15em; text-transform: uppercase; }
+    .gauge-select { background: var(--raised); border: 1px solid var(--border-mid); color: var(--text); font-family: var(--font-m); font-size: 11px; padding: 6px 10px; border-radius: 2px; margin-left: 12px; }
+    .gauge-bar-track { width: 100%; height: 20px; background: var(--bg); border: 1px solid var(--border-mid); border-radius: 2px; overflow: hidden; }
+    .gauge-bar-fill { height: 100%; border-radius: 2px; transition: width .5s ease, background .5s ease; }
+    .gauge-ticks { display: flex; gap: 3px; flex-wrap: wrap; }
+    .gauge-tick { width: 12px; height: 12px; border-radius: 1px; background: var(--border-mid); cursor: pointer; }
+    .gauge-tick.used { background: #b8944a30; }
+    .gauge-tick.used.warn { background: #8a6a0040; }
+    .gauge-tick.used.bad  { background: #8a200040; }
+    .gauge-tick.current   { background: var(--gold); }
+    .gauge-status { font-size: 14px; line-height: 1.7; color: var(--mid); border-left: 2px solid var(--gold); padding-left: 16px; font-family: var(--font-m); font-size: 12px; }
+    .gauge-status strong { color: var(--text); }
+    .gauge-signal { font-size: 11px; color: var(--dim); padding: 8px 12px; background: var(--bg); border-radius: 2px; border-left: 2px solid var(--border-mid); font-family: var(--font-m); }
+    .gauge-signal.warn { border-color: #8a6a00; color: #a09060; }
+    .gauge-signal.bad  { border-color: #8a2000; color: #a06040; }
+    .gauge-btn-pkg { background: var(--gold); border: none; color: var(--bg); font-family: var(--font-m); font-size: 11px; letter-spacing: .15em; text-transform: uppercase; padding: 10px 18px; border-radius: 2px; cursor: pointer; font-weight: bold; }
+    .gauge-btn-pkg:hover { background: #c9a55a; }
+    .gauge-btn-new { background: none; border: 1px solid var(--border-mid); color: var(--mid); font-family: var(--font-m); font-size: 11px; letter-spacing: .15em; text-transform: uppercase; padding: 10px 18px; border-radius: 2px; cursor: pointer; }
+    .gauge-btn-new:hover { border-color: var(--gold); color: var(--gold); }
+    .gauge-zone { padding: 10px; border-radius: 2px; cursor: pointer; border: 1px solid transparent; transition: border-color .2s; }
+    .gauge-zone:hover { border-color: var(--border-mid); }
+    .gauge-zone.gz-active { border-color: var(--gold); }
+    .z1 { background: #0a1a0a; } .z2 { background: #1a1a08; } .z3 { background: #1a0e08; } .z4 { background: #1a0808; }
+    .gz-label { font-size: 11px; font-weight: bold; margin-bottom: 4px; font-family: var(--font-m); }
+    .gz-pct { font-size: 13px; color: var(--gold); margin-bottom: 6px; font-family: var(--font-m); }
+    .gz-desc { font-size: 9px; color: var(--dim); line-height: 1.4; font-family: var(--font-m); }
+
+    /* ── Profile drawer view (dv-) ── */
+    .dv-header        { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .dv-name          { font-size: 26px; font-weight: 300; margin-bottom: 6px; }
+    .dv-meta          { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+    .dv-date          { font-family: var(--font-m); font-size: 11px; color: var(--dim); }
+    .dv-id            { font-family: var(--font-m); font-size: 10px; color: var(--dim); word-break: break-all; margin-bottom: 10px; }
+    .dv-stats         { display: flex; gap: 16px; flex-wrap: wrap; }
+    .dv-stat          { font-family: var(--font-m); font-size: 11px; color: var(--dim); }
+    .dv-stat strong   { color: var(--mid); }
+    .dv-section       { margin-bottom: 28px; }
+    .dv-section-label { font-family: var(--font-m); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .dv-answer        { margin-bottom: 10px; }
+    .dv-q             { font-family: var(--font-m); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
+    .dv-a             { font-size: 13px; font-weight: 300; color: var(--mid); line-height: 1.7; white-space: pre-wrap; }
+    .dv-slider-legend { display: flex; gap: 12px; font-family: var(--font-m); font-size: 10px; color: var(--dim); margin-bottom: 10px; flex-wrap: wrap; }
+    .leg-you          { color: var(--gold); }
+    .leg-oth          { color: var(--mid); }
+    .leg-sep          { color: var(--border-mid); }
+    .dv-slider-table  { display: flex; flex-direction: column; gap: 2px; }
+    .dv-slider-head   { display: grid; grid-template-columns: 1fr 80px 80px 72px; gap: 8px; padding: 6px 10px; font-family: var(--font-m); font-size: 9px; letter-spacing: .15em; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--border); }
+    .dv-slider-row    { display: grid; grid-template-columns: 1fr 80px 80px 72px; gap: 8px; padding: 7px 10px; background: var(--surface); border-radius: 2px; align-items: center; }
+    .dv-slider-row:hover { background: var(--raised); }
+    .dv-sterm         { font-family: var(--font-m); font-size: 11px; color: var(--mid); }
+    .dv-snums         { font-family: var(--font-m); font-size: 11px; color: var(--dim); }
+    .dv-snums small   { font-size: 9px; opacity: .5; margin: 0 2px; }
+    .dv-sgap          { font-family: var(--font-m); font-size: 11px; }
+    .dv-gap-bar-wrap  { height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; margin-top: 3px; }
+    .dv-gap-bar       { height: 2px; border-radius: 1px; }
+    .dv-chips         { display: flex; flex-wrap: wrap; gap: 6px; }
+    .dv-cert          { background: var(--surface); border: 1px solid var(--border-mid); border-radius: 2px; padding: 16px 20px; }
+    .dv-cert-row      { display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .dv-cert-row:last-child { border-bottom: none; }
+    .dv-cert-lbl      { font-family: var(--font-m); font-size: 10px; color: var(--dim); letter-spacing: .1em; text-transform: uppercase; }
+    .dv-cert-val      { color: var(--mid); font-size: 13px; text-align: right; }
+    .dv-mono          { font-family: var(--font-m); font-size: 11px; }
+
+    /* ── Admin reveal toggles ── */
+    .admin-reveal-btn { width: 100%; display: flex; align-items: center; gap: 10px; background: none; border: 1px solid var(--border); border-radius: 2px; padding: 8px 12px; cursor: pointer; text-align: left; transition: border-color .15s; color: var(--dim); margin-bottom: 0; }
+    .admin-reveal-btn:hover { border-color: var(--gold); color: var(--mid); }
+    .admin-reveal-btn-open  { border-color: var(--gold); color: var(--mid); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    .admin-reveal-num   { font-family: var(--font-m); font-size: 10px; color: var(--gold); flex-shrink: 0; width: 16px; }
+    .admin-reveal-title { font-size: 13px; font-weight: 300; color: var(--text); flex: 1; }
+    .admin-reveal-key   { font-family: var(--font-m); font-size: 9px; color: var(--dim); letter-spacing: .05em; }
+    .admin-reveal-caret { font-size: 10px; color: var(--dim); flex-shrink: 0; }
+    .admin-reveal-body  { padding: 12px 14px; border: 1px solid var(--gold); border-top: none; border-radius: 0 0 2px 2px; margin-bottom: 10px; font-size: 13px; font-weight: 300; color: var(--mid); line-height: 1.7; white-space: pre-wrap; background: var(--gold-glow); }
+
+    /* ── Value colour grids (mirrors app profile_view) ── */
+    .dv-grids           { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0 24px; }
+    .dv-grid-block      { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 14px; }
+    .dv-grid-title      { font-family: var(--font-m); font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); margin-bottom: 10px; }
+    .dv-value-grid      { display: flex; flex-wrap: wrap; gap: 3px; }
+    .dv-value-sq        { width: 12px; height: 12px; border-radius: 1px; cursor: default; transition: transform .1s; position: relative; }
+    .dv-value-sq:hover  { transform: scale(1.8); z-index: 10; }
+    .dv-value-sq[title]:hover::after { content: attr(title); position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); background: #1a1a28; color: var(--text); font-family: var(--font-m); font-size: 10px; padding: 3px 7px; border-radius: 2px; white-space: nowrap; pointer-events: none; border: 1px solid var(--border-mid); z-index: 100; }
+    .dv-gap-list        { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 16px; }
+    .dv-gap-row         { display: grid; grid-template-columns: 140px 1fr 40px; gap: 10px; align-items: center; }
+    .dv-gap-term        { font-family: var(--font-m); font-size: 11px; color: var(--mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dv-gap-track       { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .dv-gap-fill        { height: 3px; background: var(--gold); border-radius: 2px; }
+    .dv-gap-num         { font-family: var(--font-m); font-size: 11px; color: var(--gold); text-align: right; }
+    .dv-legend          { font-family: var(--font-m); font-size: 9px; color: var(--dim); margin-bottom: 14px; letter-spacing: .04em; }
+
+    @media (max-width: 640px) {
+      .admin-body { padding: 24px 16px; }
+      .gap-row { grid-template-columns: 100px 1fr 40px; }
+      .dv-grids { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-mark">H.I.E.S &nbsp;·&nbsp; Admin</div>
+  <div class="login-title">Administration</div>
+  <div class="login-sub">Enter admin password to continue</div>
+  <input type="password" class="login-input" id="pass-input" placeholder="Password"
+    onkeydown="if(event.key==='Enter')login()">
+  <button class="login-btn" onclick="login()">Enter →</button>
+  <div class="login-err" id="login-err"></div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard-screen">
+  <nav class="admin-nav">
+    <span class="admin-nav-mark">H.I.E.S &nbsp;·&nbsp; Admin Dashboard</span>
+    <div class="admin-nav-right">
+      <button class="admin-nav-link" onclick="showAdminTab('dashboard')">Dashboard</button>
+      <button class="admin-nav-link" onclick="showAdminTab('gauge')">Context Gauge</button>
+      <button class="admin-nav-link" onclick="loadDashboard()">Refresh</button>
+      <button class="admin-nav-link" onclick="logout()">Logout</button>
+      <a class="admin-nav-link" href="/" style="text-decoration:none">← App</a>
+    </div>
+  </nav>
+
+  <!-- Dashboard tab -->
+  <div id="admin-tab-dashboard" class="admin-body">
+    <div class="page-title">Dashboard</div>
+    <div class="page-sub" id="dashboard-ts">Loading...</div>
+
+    <div class="stat-grid" id="stat-grid">
+      <div class="stat-card"><div class="stat-n" id="s-total">—</div><div class="stat-label">Total Denends</div></div>
+      <div class="stat-card"><div class="stat-n" id="s-full">—</div><div class="stat-label">Full Denends</div></div>
+      <div class="stat-card"><div class="stat-n" id="s-slider">—</div><div class="stat-label">Slider Only</div></div>
+      <div class="stat-card"><div class="stat-n" id="s-assay">—</div><div class="stat-label">Assay Only</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">Top Value Gaps — averaged across all slider denends</div>
+      <div id="gaps-container"><div class="loading-msg">Loading...</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">Recent Denends</div>
+      <div id="profiles-container"><div class="loading-msg">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- Gauge tab -->
+  <div id="admin-tab-gauge" class="admin-body" style="display:none">
+    <div class="page-title">Context Gauge</div>
+    <div class="page-sub">Track Claude session context usage — know when to request a package</div>
+
+    <div class="gauge-wrap">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <label class="gauge-label">Session type</label>
+        <select id="model-select" class="gauge-select" onchange="gaugeUpdate()">
+          <option value="200000">Claude Sonnet (200k tokens)</option>
+          <option value="200000">Claude Opus (200k tokens)</option>
+        </select>
+        <label class="gauge-label" style="margin-left:auto">Approx used</label>
+        <select id="pct-select" class="gauge-select" onchange="gaugeUpdate()">
+          <option value="15">~15% — Just started</option>
+          <option value="30">~30% — Warming up</option>
+          <option value="50">~50% — Halfway</option>
+          <option value="65">~65% — Getting full</option>
+          <option value="80" selected>~80% — Near limit</option>
+          <option value="90">~90% — Ship the package NOW</option>
+          <option value="95">~95% — Critical</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="gauge-label">Context used</label>
+        <div class="gauge-bar-track" style="margin-top:10px">
+          <div class="gauge-bar-fill" id="gauge-bar"></div>
+        </div>
+      </div>
+
+      <div>
+        <label class="gauge-label">Each square = 1% of context</label>
+        <div class="gauge-ticks" id="gauge-ticks" style="margin-top:10px"></div>
+      </div>
+
+      <div class="gauge-status" id="gauge-status"></div>
+
+      <div>
+        <label class="gauge-label">Warning signs — watch for these</label>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+          <div class="gauge-signal">Responses get noticeably shorter for no reason</div>
+          <div class="gauge-signal warn">Instance forgets something said earlier in the session</div>
+          <div class="gauge-signal warn">Repeats something already done</div>
+          <div class="gauge-signal bad">Stops mid-task without explanation</div>
+          <div class="gauge-signal bad">Makes an error on something simple it got right before</div>
+        </div>
+      </div>
+
+      <div>
+        <label class="gauge-label">What to say</label>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px">
+          <button class="gauge-btn-pkg" onclick="gaugeShowMsg('pkg')">Request the package now</button>
+          <button class="gauge-btn-new" onclick="gaugeShowMsg('new')">What to say to new instance</button>
+        </div>
+        <div id="gauge-action-msg" style="margin-top:16px;font-size:13px;color:var(--mid);line-height:1.8;display:none;border-left:2px solid var(--gold);padding-left:16px;font-family:var(--font-m)"></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;font-size:10px">
+        <div class="gauge-zone z1" onclick="gaugeSetPct(25)"><div class="gz-label" style="color:#4a9a4a">EARLY</div><div class="gz-pct">0–40%</div><div class="gz-desc">Full capability. Long tasks, rewrites, new features.</div></div>
+        <div class="gauge-zone z2" onclick="gaugeSetPct(55)"><div class="gz-label" style="color:#9a9a2a">MID</div><div class="gz-pct">40–65%</div><div class="gz-desc">Still good. Finish current task, then plan next.</div></div>
+        <div class="gauge-zone z3" onclick="gaugeSetPct(75)"><div class="gz-label" style="color:#9a6a2a">LATE</div><div class="gz-pct">65–85%</div><div class="gz-desc">Wrap up. No new big tasks. Request package soon.</div></div>
+        <div class="gauge-zone z4" onclick="gaugeSetPct(90)"><div class="gz-label" style="color:#9a2a2a">CRITICAL</div><div class="gz-pct">85–100%</div><div class="gz-desc">Package now. Do not start anything new.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Profile drawer -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()">
+  <div class="drawer" id="drawer" onclick="event.stopPropagation()">
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    <div id="drawer-content"><div class="loading-msg">Loading...</div></div>
+  </div>
+</div>
+
+<script>
+let PASS = ''
+
+function login() {
+  const pw = document.getElementById('pass-input').value
+  fetch('/api/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pw })
+  }).then(r => {
+    if (r.ok) {
+      PASS = pw
+      document.getElementById('login-screen').style.display    = 'none'
+      document.getElementById('dashboard-screen').style.display = 'block'
+      loadDashboard()
+    } else {
+      document.getElementById('login-err').textContent = 'Incorrect password.'
+    }
+  }).catch(() => {
+    document.getElementById('login-err').textContent = 'Could not reach server.'
+  })
+}
+
+function logout() {
+  PASS = ''
+  document.getElementById('login-screen').style.display    = 'flex'
+  document.getElementById('dashboard-screen').style.display = 'none'
+  document.getElementById('pass-input').value = ''
+}
+
+async function loadDashboard() {
+  document.getElementById('dashboard-ts').textContent = 'Last loaded: ' + new Date().toLocaleTimeString()
+  try {
+    const res  = await fetch('/api/admin/dashboard', { headers: { 'x-admin-password': PASS } })
+    if (!res.ok) { logout(); return }
+    const data = await res.json()
+
+    // Stats
+    document.getElementById('s-total').textContent  = data.total
+    document.getElementById('s-full').textContent   = data.by_section.full    || 0
+    document.getElementById('s-slider').textContent = data.by_section.slider  || 0
+    document.getElementById('s-assay').textContent  = data.by_section.assay   || 0
+
+    // Gaps
+    const maxGap = data.top_gaps[0]?.avg_gap || 1
+    document.getElementById('gaps-container').innerHTML = data.top_gaps.length === 0
+      ? '<div class="loading-msg">No slider data yet.</div>'
+      : `<div class="gap-list">
+          ${data.top_gaps.map(g => `
+            <div class="gap-row">
+              <span class="gap-term">${g.term}</span>
+              <div class="gap-bar-wrap"><div class="gap-bar" style="width:${Math.max(0,g.avg_gap/maxGap*100)}%"></div></div>
+              <span class="gap-val">+${g.avg_gap}</span>
+            </div>`).join('')}
+        </div>`
+
+    // Profiles table
+    document.getElementById('profiles-container').innerHTML = data.recent.length === 0
+      ? '<div class="loading-msg">No denends yet.</div>'
+      : `<table class="data-table">
+          <thead><tr>
+            <th>Name</th><th>Date</th>
+            <th>Sliders</th><th>Answers</th><th>Values</th><th>Section</th>
+          </tr></thead>
+          <tbody>
+            ${data.recent.map(p => `
+              <tr>
+                <td class="name-cell">${esc(p.name)}</td>
+                <td class="mono-cell">${new Date(p.recorded_at).toLocaleDateString()}</td>
+                <td class="mono-cell">${p.slider_count}</td>
+                <td class="mono-cell">${p.answer_count}</td>
+                <td class="mono-cell">${p.detected_count}</td>
+                <td><button class="section-badge ${p.section||''}" onclick="viewProfile('${p.id}')">${p.section||'—'}</button></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`
+  } catch(e) {
+    document.getElementById('profiles-container').innerHTML = `<div class="error-msg">Error: ${e.message}</div>`
+  }
+}
+
+// Question key → readable label map
+const Q_LABELS = {
+  values_and_meaning:    'What do you most deeply value in your existence?',
+  self_and_world:        'What kind of world would you most want to live in?',
+  obligations:           'What do you believe you owe to others?',
+  gap:                   'Where is the gap between how you live and how you want to live?',
+  ideal_life:            'What would your ideal life look like?',
+  owed_by_existence:     'What do you believe existence owes you?',
+  civic:                 'What do you think a good society requires?',
+}
+
+// ── Cached value list from server ──────────────────────────────────────────
+let ADMIN_VALUE_LIST = null
+async function getAdminValueList() {
+  if (ADMIN_VALUE_LIST) return ADMIN_VALUE_LIST
+  try {
+    const res  = await fetch('/api/values')
+    const data = await res.json()
+    ADMIN_VALUE_LIST = []
+    for (const d of (data.domains || [])) {
+      for (const v of d.values) ADMIN_VALUE_LIST.push({ term: v.term, domain: d.label })
+    }
+  } catch(e) { ADMIN_VALUE_LIST = [] }
+  return ADMIN_VALUE_LIST
+}
+
+// ── Colour helper (mirrors app.js valueToColour) ───────────────────────────
+function adminValueColour(val) {
+  const v   = Math.max(0, Math.min(100, val))
+  const hue = Math.round(v * 1.27)
+  const sat = Math.round(65 - v * 0.20)
+  const lit = Math.round(28 + v * 0.12)
+  return 'hsl(' + hue + ',' + sat + '%,' + lit + '%)'
+}
+
+// ── Build one colour grid block (DOM, not innerHTML) ───────────────────────
+function buildAdminGrid(valueList, scores, field, label) {
+  const block = document.createElement('div')
+  block.className = 'dv-grid-block'
+
+  const title = document.createElement('div')
+  title.className = 'dv-grid-title'
+  title.textContent = label
+  block.appendChild(title)
+
+  const grid = document.createElement('div')
+  grid.className = 'dv-value-grid'
+
+  for (const v of valueList) {
+    const score = scores[v.term]?.[field] ?? null
+    const sq    = document.createElement('div')
+    sq.className   = 'dv-value-sq'
+    sq.title       = v.term + (score !== null ? ' — ' + score : ' — not rated')
+    sq.style.background = score !== null ? adminValueColour(score) : '#1c1c28'
+    grid.appendChild(sq)
+  }
+  block.appendChild(grid)
+  return block
+}
+
+// ── Build gap bar list ─────────────────────────────────────────────────────
+function buildAdminGapList(scores) {
+  const gaps = Object.entries(scores)
+    .map(([term, sc]) => ({
+      term,
+      gap: Math.round(((sc.Ss_you_other - sc.S0_you_other) + (sc.Ss_other_you - sc.S0_other_you)) / 2)
+    }))
+    .filter(g => g.gap > 0)
+    .sort((a, b) => b.gap - a.gap)
+    .slice(0, 10)
+
+  if (!gaps.length) return null
+  const maxGap = gaps[0].gap
+
+  const wrap = document.createElement('div')
+  wrap.className = 'dv-gap-list'
+  for (const g of gaps) {
+    const row = document.createElement('div')
+    row.className = 'dv-gap-row'
+    row.innerHTML = `
+      <span class="dv-gap-term">${esc(g.term)}</span>
+      <div class="dv-gap-track"><div class="dv-gap-fill" style="width:${Math.round(g.gap/maxGap*100)}%"></div></div>
+      <span class="dv-gap-num">+${g.gap}</span>`
+    wrap.appendChild(row)
+  }
+  return wrap
+}
+
+async function viewProfile(id) {
+  document.getElementById('drawer-overlay').classList.add('open')
+  document.getElementById('drawer').classList.add('open')
+  document.getElementById('drawer-content').innerHTML = '<div class="loading-msg">Loading denend...</div>'
+
+  try {
+    const [profRes, valueList] = await Promise.all([
+      fetch(`/api/admin/profile/${id}`, { headers: { 'x-admin-password': PASS } }),
+      getAdminValueList()
+    ])
+    const p = await profRes.json()
+
+    const answers       = Object.entries(p.answers || {})
+    const scores        = p.slider_scores || {}
+    const sliderEntries = Object.entries(scores)
+    const detected      = p.detected_values || []
+
+    // Build assay reveal HTML
+    let assayHTML = ''
+    answers.forEach(([key, val], i) => {
+      assayHTML += `
+        <button class="admin-reveal-btn" id="abtn-${i}" onclick="adminToggleAnswer(${i})">
+          <span class="admin-reveal-num">${i+1}</span>
+          <span class="admin-reveal-title">${esc(Q_LABELS[key] || key.replace(/_/g,' '))}</span>
+          <span class="admin-reveal-key">${esc(key)}</span>
+          <span class="admin-reveal-caret" id="acaret-${i}">▸</span>
+        </button>
+        <div class="admin-reveal-body" id="abody-${i}" style="display:none">${esc(val)}</div>`
+    })
+
+    // Static HTML shell — slider grid injected via DOM after
+    const drawerEl = document.getElementById('drawer-content')
+    drawerEl.innerHTML = `
+      <div class="dv-header">
+        <div class="dv-name">${esc(p.name)}</div>
+        <div class="dv-meta">
+          <span class="section-badge ${p.section||''}">${(p.section||'unknown').toUpperCase()}</span>
+          <span class="dv-date">${new Date(p.recorded_at).toLocaleString()}</span>
+        </div>
+        <div class="dv-id">${p.id}</div>
+        <div class="dv-stats">
+          ${sliderEntries.length ? `<span class="dv-stat"><strong>${sliderEntries.length}</strong> slider values</span>` : ''}
+          ${answers.length       ? `<span class="dv-stat"><strong>${answers.length}</strong> written answers</span>` : ''}
+          ${detected.length      ? `<span class="dv-stat"><strong>${detected.length}</strong> detected values</span>` : ''}
+        </div>
+      </div>
+
+      ${answers.length ? `
+      <div class="dv-section">
+        <div class="dv-section-label">Written Answers — Assay Denend</div>
+        ${assayHTML}
+      </div>` : ''}
+
+      ${sliderEntries.length ? `<div class="dv-section" id="dv-slider-section">
+        <div class="dv-section-label">Slider Denend — ${sliderEntries.length} values</div>
+        <div class="dv-legend">Colour: deep red = 0 &nbsp;→&nbsp; deep green = 100. &nbsp;Grey = not rated. &nbsp;Hover any square to see value name.</div>
+        <div id="dv-grids-mount"></div>
+        <div class="dv-section-label" style="margin-top:20px">Largest gaps — ideal vs current</div>
+        <div id="dv-gaps-mount"></div>
+      </div>` : ''}
+
+      ${detected.length ? `
+      <div class="dv-section">
+        <div class="dv-section-label">Values Detected in Written Answers</div>
+        <div class="dv-chips">${detected.map(v => `<span class="det-chip">${esc(v)}</span>`).join('')}</div>
+      </div>` : ''}
+
+      ${p.fingerprint ? `
+      <div class="dv-section dv-cert">
+        <div class="dv-section-label">Authorship Certificate</div>
+        <div class="dv-cert-row"><span class="dv-cert-lbl">Coreh</span><span class="dv-cert-val">${esc(p.name)}</span></div>
+        <div class="dv-cert-row"><span class="dv-cert-lbl">Record ID</span><span class="dv-cert-val dv-mono">${esc(p.id)}</span></div>
+        <div class="dv-cert-row"><span class="dv-cert-lbl">Section</span><span class="dv-cert-val">${(p.section||'—').toUpperCase()}</span></div>
+        <div class="dv-cert-row"><span class="dv-cert-lbl">Sealed</span><span class="dv-cert-val">${new Date(p.recorded_at).toLocaleString()}</span></div>
+        <div class="dv-cert-row dv-cert-fp"><span class="dv-cert-lbl">Key fingerprint</span><span class="dv-cert-val dv-mono" style="word-break:break-all;font-size:10px;line-height:1.8">${esc(p.fingerprint)}</span></div>
+      </div>` : ''}
+    `
+
+    // Inject colour grids via DOM (safe, no nested template literal issues)
+    if (sliderEntries.length && valueList.length) {
+      const gridsMount = document.getElementById('dv-grids-mount')
+      const gapsMount  = document.getElementById('dv-gaps-mount')
+
+      if (gridsMount) {
+        const gridsWrap = document.createElement('div')
+        gridsWrap.className = 'dv-grids'
+        gridsWrap.appendChild(buildAdminGrid(valueList, scores, 'S0_you_other', 'State 0 — You → Others (current)'))
+        gridsWrap.appendChild(buildAdminGrid(valueList, scores, 'S0_other_you', 'State 0 — Others → You (current)'))
+        gridsWrap.appendChild(buildAdminGrid(valueList, scores, 'Ss_you_other', 'State ★ — You → Others (ideal)'))
+        gridsWrap.appendChild(buildAdminGrid(valueList, scores, 'Ss_other_you', 'State ★ — Others → You (ideal)'))
+        gridsMount.appendChild(gridsWrap)
+      }
+
+      if (gapsMount) {
+        const gapList = buildAdminGapList(scores)
+        if (gapList) gapsMount.appendChild(gapList)
+        else gapsMount.innerHTML = '<div style="font-family:var(--font-m);font-size:11px;color:var(--dim);padding:8px 0">No positive gaps recorded.</div>'
+      }
+    }
+
+  } catch(e) {
+    document.getElementById('drawer-content').innerHTML = `<div class="error-msg">Error: ${e.message}</div>`
+  }
+}
+
+function adminToggleAnswer(i) {
+  const body   = document.getElementById('abody-' + i)
+  const btn    = document.getElementById('abtn-'  + i)
+  const caret  = document.getElementById('acaret-'+ i)
+  if (!body) return
+  const open = body.style.display === 'none'
+  body.style.display = open ? 'block' : 'none'
+  if (caret) caret.textContent = open ? '▾' : '▸'
+  if (btn)   btn.classList.toggle('admin-reveal-btn-open', open)
+}
+
+function closeDrawer() {
+  document.getElementById('drawer-overlay').classList.remove('open')
+  document.getElementById('drawer').classList.remove('open')
+}
+
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+}
+
+function showAdminTab(tab) {
+  document.getElementById('admin-tab-dashboard').style.display = tab === 'dashboard' ? '' : 'none'
+  document.getElementById('admin-tab-gauge').style.display     = tab === 'gauge'     ? '' : 'none'
+  if (tab === 'gauge') gaugeUpdate()
+}
+
+function gaugeSetPct(v) {
+  document.getElementById('pct-select').value = v
+  gaugeUpdate()
+}
+
+function gaugeUpdate() {
+  const pct    = parseInt(document.getElementById('pct-select').value)
+  const bar    = document.getElementById('gauge-bar')
+  const status = document.getElementById('gauge-status')
+  const ticks  = document.getElementById('gauge-ticks')
+  if (!bar) return
+
+  let colour = '#4a9a4a'
+  if (pct > 65) colour = '#9a6a2a'
+  if (pct > 85) colour = '#9a2a2a'
+  bar.style.width      = pct + '%'
+  bar.style.background = colour
+
+  ticks.innerHTML = ''
+  for (let i = 0; i < 100; i++) {
+    const t = document.createElement('div')
+    t.className = 'gauge-tick'
+    if (i < pct - 1) {
+      t.classList.add('used')
+      if (i >= 65) t.classList.add('warn')
+      if (i >= 85) t.classList.add('bad')
+    } else if (i === pct - 1) {
+      t.classList.add('current')
+    }
+    ticks.appendChild(t)
+  }
+
+  if (pct <= 40) {
+    status.innerHTML = '<strong>Early.</strong> Full capability. Good time for large tasks, rewrites, new features.'
+  } else if (pct <= 65) {
+    status.innerHTML = '<strong>Halfway.</strong> Still capable. Finish what is in progress, then plan what matters most.'
+  } else if (pct <= 85) {
+    status.innerHTML = '<strong>Getting late.</strong> Do not start anything large. Finish current task, fix known bugs, then request the package.'
+  } else {
+    status.innerHTML = '<strong>Package now.</strong> Say: "give me the package." Do not start a new task. Everything since the last package will be lost if you move to a new instance without it.'
+  }
+
+  document.querySelectorAll('.gauge-zone').forEach(z => z.classList.remove('gz-active'))
+  const zones = document.querySelectorAll('.gauge-zone')
+  if      (pct <= 40) zones[0]?.classList.add('gz-active')
+  else if (pct <= 65) zones[1]?.classList.add('gz-active')
+  else if (pct <= 85) zones[2]?.classList.add('gz-active')
+  else                zones[3]?.classList.add('gz-active')
+}
+
+function gaugeShowMsg(type) {
+  const d = document.getElementById('gauge-action-msg')
+  d.style.display = 'block'
+  if (type === 'pkg') {
+    d.textContent = 'Say: "Give me the package. Fix any known bugs first, verify syntax, check CSS variables, write the HANDOFF.md with no gaps, present all changed files."'
+  } else {
+    d.textContent = 'Say: "I am continuing the HIES project. I am uploading the project files and the HANDOFF.md. Read the HANDOFF.md completely before doing anything. Then tell me what you understand to be the current state — do not start working until I confirm."'
+  }
+}
+
+document.getElementById('pass-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') login()
+})
+</script>
+</body>
+</html>

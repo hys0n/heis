@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Context Gauge</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #09090d;
+    color: #e8e0cc;
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 40px;
+  }
+  h1 { font-size: 13px; letter-spacing: .3em; color: #6b6050; text-transform: uppercase; }
+
+  .gauge-wrap {
+    width: 100%;
+    max-width: 520px;
+    background: #111118;
+    border: 1px solid #2a2a3a;
+    border-radius: 4px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .bar-track {
+    width: 100%;
+    height: 20px;
+    background: #0d0d14;
+    border: 1px solid #2a2a3a;
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width .5s ease, background .5s ease;
+  }
+
+  .zones {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 8px;
+    font-size: 10px;
+  }
+  .zone {
+    padding: 10px;
+    border-radius: 2px;
+    text-align: center;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: border-color .2s;
+  }
+  .zone:hover { border-color: #444; }
+  .zone.active { border-color: #c9a55a; }
+  .zone-label { font-size: 11px; font-weight: bold; margin-bottom: 4px; }
+  .zone-pct { font-size: 13px; color: #c9a55a; margin-bottom: 6px; }
+  .zone-desc { font-size: 9px; color: #6b6050; line-height: 1.4; }
+
+  .zone-1 { background: #0a1a0a; }
+  .zone-2 { background: #1a1a08; }
+  .zone-3 { background: #1a0e08; }
+  .zone-4 { background: #1a0808; }
+
+  .status {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #a09080;
+    border-left: 2px solid #c9a55a;
+    padding-left: 16px;
+  }
+  .status strong { color: #e8e0cc; }
+
+  .signals {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .signal {
+    font-size: 11px;
+    color: #6b6050;
+    padding: 8px 12px;
+    background: #0d0d14;
+    border-radius: 2px;
+    border-left: 2px solid #2a2a3a;
+  }
+  .signal.warn { border-color: #8a6a00; color: #a09060; }
+  .signal.bad  { border-color: #8a2000; color: #a06040; }
+
+  .action-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  button {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .btn-pkg {
+    background: #c9a55a;
+    border: none;
+    color: #09090d;
+    font-weight: bold;
+  }
+  .btn-pkg:hover { background: #d4b06a; }
+  .btn-new {
+    background: none;
+    border: 1px solid #3a3a4a;
+    color: #a09080;
+  }
+  .btn-new:hover { border-color: #c9a55a; color: #c9a55a; }
+
+  .tick-row {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+  }
+  .tick {
+    width: 12px; height: 12px;
+    border-radius: 1px;
+    background: #2a2a3a;
+    cursor: pointer;
+    transition: background .1s;
+  }
+  .tick.used { background: #c9a55a30; }
+  .tick.used.warn { background: #8a6a0040; }
+  .tick.used.bad { background: #8a200040; }
+  .tick.current { background: #c9a55a; }
+
+  label { font-size: 10px; color: #6b6050; letter-spacing: .15em; text-transform: uppercase; }
+
+  select {
+    background: #111118;
+    border: 1px solid #2a2a3a;
+    color: #e8e0cc;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 2px;
+    margin-left: 12px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Claude Context Gauge — HIES</h1>
+
+<div class="gauge-wrap">
+
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <label>Session type:</label>
+    <select id="model-select" onchange="update()">
+      <option value="200000">Claude Sonnet (200k tokens)</option>
+      <option value="200000">Claude Opus (200k tokens)</option>
+    </select>
+    <label style="margin-left:auto">Used approx:</label>
+    <select id="pct-select" onchange="update()">
+      <option value="15">~15% — Just started</option>
+      <option value="30">~30% — Warming up</option>
+      <option value="50">~50% — Halfway</option>
+      <option value="65">~65% — Getting full</option>
+      <option value="80" selected>~80% — Near limit</option>
+      <option value="90">~90% — Ship the package NOW</option>
+      <option value="95">~95% — Critical</option>
+    </select>
+  </div>
+
+  <div>
+    <label>Context used</label>
+    <div class="bar-track" style="margin-top:10px">
+      <div class="bar-fill" id="bar"></div>
+    </div>
+  </div>
+
+  <div>
+    <label>Each square = 1% of context</label>
+    <div class="tick-row" id="ticks" style="margin-top:10px"></div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <div>
+    <label>Warning signs — watch for these</label>
+    <div class="signals" style="margin-top:10px">
+      <div class="signal">Responses get noticeably shorter for no reason</div>
+      <div class="signal warn">Instance forgets something said earlier in the session</div>
+      <div class="signal warn">Repeats something already done — rewrites a function that was just fixed</div>
+      <div class="signal bad">Stops mid-task without explanation</div>
+      <div class="signal bad">Makes an error on something simple that it got right before</div>
+    </div>
+  </div>
+
+  <div>
+    <label>What to do when you see those signs</label>
+    <div class="action-row" style="margin-top:10px">
+      <button class="btn-pkg" onclick="showPkg()">Request the package now</button>
+      <button class="btn-new" onclick="showNew()">What to say to new instance</button>
+    </div>
+    <div id="action-msg" style="margin-top:16px;font-size:12px;color:#a09080;line-height:1.8;display:none;border-left:2px solid #c9a55a;padding-left:16px"></div>
+  </div>
+
+  <div class="zones">
+    <div class="zone zone-1" onclick="setPct(25)">
+      <div class="zone-label" style="color:#4a9a4a">EARLY</div>
+      <div class="zone-pct">0–40%</div>
+      <div class="zone-desc">Full capability. Long tasks, rewrites, new features.</div>
+    </div>
+    <div class="zone zone-2" onclick="setPct(55)">
+      <div class="zone-label" style="color:#9a9a2a">MID</div>
+      <div class="zone-pct">40–65%</div>
+      <div class="zone-desc">Still good. Finish current task, then plan next.</div>
+    </div>
+    <div class="zone zone-3" onclick="setPct(75)">
+      <div class="zone-label" style="color:#9a6a2a">LATE</div>
+      <div class="zone-pct">65–85%</div>
+      <div class="zone-desc">Wrap up. No new big tasks. Request package soon.</div>
+    </div>
+    <div class="zone zone-4 active" onclick="setPct(90)">
+      <div class="zone-label" style="color:#9a2a2a">CRITICAL</div>
+      <div class="zone-pct">85–100%</div>
+      <div class="zone-desc">Package now. Do not start anything new.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function setPct(v) {
+  document.getElementById('pct-select').value = v
+  update()
+}
+
+function update() {
+  const pct = parseInt(document.getElementById('pct-select').value)
+  const bar = document.getElementById('bar')
+  const status = document.getElementById('status')
+  const ticks = document.getElementById('ticks')
+
+  // Colour
+  let colour = '#4a9a4a'
+  if (pct > 65) colour = '#9a6a2a'
+  if (pct > 85) colour = '#9a2a2a'
+
+  bar.style.width = pct + '%'
+  bar.style.background = colour
+
+  // Ticks
+  ticks.innerHTML = ''
+  for (let i = 0; i < 100; i++) {
+    const t = document.createElement('div')
+    t.className = 'tick'
+    if (i < pct - 1) {
+      t.classList.add('used')
+      if (i >= 65) t.classList.add('warn')
+      if (i >= 85) t.classList.add('bad')
+    } else if (i === pct - 1) {
+      t.classList.add('current')
+    }
+    ticks.appendChild(t)
+  }
+
+  // Status text
+  if (pct <= 40) {
+    status.innerHTML = '<strong>You are early.</strong> Full capability available. Good time for big tasks — rewrites, new features, quality passes on the slider questions.'
+  } else if (pct <= 65) {
+    status.innerHTML = '<strong>Halfway through.</strong> Still capable. Finish what is in progress, then think about what matters most before the limit.'
+  } else if (pct <= 85) {
+    status.innerHTML = '<strong>Getting late.</strong> Do not start anything large. Finish the current task, fix any known bugs, then ask for the package. This is where sessions have been ending without a package — do not let that happen.'
+  } else {
+    status.innerHTML = '<strong>Package now.</strong> Say: "give me the package." Do not start a new task. The instance is near its limit. Everything done since the last package will be lost if you move to a new instance without it.'
+  }
+
+  // Zone highlights
+  document.querySelectorAll('.zone').forEach(z => z.classList.remove('active'))
+  if (pct <= 40) document.querySelectorAll('.zone')[0].classList.add('active')
+  else if (pct <= 65) document.querySelectorAll('.zone')[1].classList.add('active')
+  else if (pct <= 85) document.querySelectorAll('.zone')[2].classList.add('active')
+  else document.querySelectorAll('.zone')[3].classList.add('active')
+}
+
+function showPkg() {
+  const d = document.getElementById('action-msg')
+  d.style.display = 'block'
+  d.innerHTML = `Say this to the current instance:<br><br>
+  <em>"Give me the package. Fix any known bugs first, verify syntax, check CSS variables, zip the webapp folder, write the HANDOFF.md with no gaps, include it in the zip."</em><br><br>
+  The HANDOFF.md must contain: what is complete, what is broken, what has been rejected, bugs fixed this session, architecture rules, data structures, vocabulary, and instructions for the next packaging.`
+}
+
+function showNew() {
+  const d = document.getElementById('action-msg')
+  d.style.display = 'block'
+  d.innerHTML = `Say this to the new instance:<br><br>
+  <em>"I am continuing the HIES project. I am uploading the project ZIP and the HANDOFF.md. Read the HANDOFF.md completely before doing anything. Then tell me what you understand to be the current state and what needs doing next — do not start working until I confirm."</em><br><br>
+  Then upload: the ZIP file and the HANDOFF.md separately so the instance can read it directly.`
+}
+
+update()
+</script>
+
+</body>
+</html>
