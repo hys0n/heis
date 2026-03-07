@@ -1,5 +1,5 @@
 # heis
-H.I.E.S — the Human existential Ideals Extraction System — is a tool built to do one thing before ASI arrives: formally ask every human being what they value, record their answer permanently and verifiably, and aggregate all of it into a collective ideal that can be used to align artificial superintelligence to the actual stated preferences of humanity
+H.I.E.S — the Human Existential Ideals Extraction System — is a tool built to do one thing before ASI arrives: formally ask every human being what they value, record their answer permanently and verifiably, and aggregate all of it into a collective ideal that can be used to align artificial superintelligence to the actual stated preferences of humanity
 
 
 
@@ -99,7 +99,7 @@ const valid = await window.crypto.subtle.verify(
 
 ## Next steps
 
-- [ ] Value scoring screen (202 values, three sliders each)
+- [ ] Value scoring screen (202 values,  sliders each)
 - [ ] Verify profile page (upload .json + .jwk, check signature)
 - [ ] Auth — return to update your denend
 - [ ] Gap map visualisation
