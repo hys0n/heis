@@ -1,0 +1,23 @@
+# Node.js
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-workspace
+
+# Logging files
+*.log
+
+# Build artifacts
+/dist/
+/build/
+*.tgz
